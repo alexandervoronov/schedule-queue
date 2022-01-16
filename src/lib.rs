@@ -1,8 +1,8 @@
-use futures_util::future;
 use parking_lot::Mutex;
 use priority_queue::PriorityQueue;
 use std::{
     cmp::Reverse,
+    future,
     hash::Hash,
     sync::Arc,
     time::{Duration, SystemTime},
@@ -12,6 +12,12 @@ use tokio::sync::Notify;
 pub struct ScheduleQueue<T: Hash + Eq> {
     queue: Arc<Mutex<PriorityQueue<T, Reverse<SystemTime>>>>,
     notify: Arc<Notify>,
+}
+
+impl<T: Hash + Eq> Default for ScheduleQueue<T> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<T: Hash + Eq> ScheduleQueue<T> {
