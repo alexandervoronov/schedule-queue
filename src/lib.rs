@@ -28,6 +28,8 @@ impl<T: Hash + Eq> ScheduleQueue<T> {
         }
     }
 
+    /// Schedule event at the given time.
+    /// If an equivalent event already existed, its previous scheduled time is returned.
     pub fn schedule(&mut self, item: T, time: SystemTime) -> Option<SystemTime> {
         let (old_time, should_notify) = {
             let mut queue = self.queue.lock();
@@ -49,6 +51,7 @@ impl<T: Hash + Eq> ScheduleQueue<T> {
         old_time
     }
 
+    /// Remove an event from the schedule. Returns the event and its scheduled time.
     pub fn deschedule(&mut self, item: &T) -> Option<(T, SystemTime)> {
         let mut queue = self.queue.lock();
         queue
@@ -56,6 +59,8 @@ impl<T: Hash + Eq> ScheduleQueue<T> {
             .map(|(value, Reverse(old_time))| (value, old_time))
     }
 
+    /// Returns immediately if the queue has an event at or past SystemTime::now(),
+    /// otherwise blocks until the time of the earliest scheduled event.
     pub async fn next(&mut self) -> (T, SystemTime) {
         loop {
             let duration_till_next = {
@@ -73,6 +78,7 @@ impl<T: Hash + Eq> ScheduleQueue<T> {
                     None
                 }
             };
+
             tokio::select! {
                 _ = Self::sleep_for_duration(duration_till_next) => {},
                 _ = self.notify.notified() => {}
